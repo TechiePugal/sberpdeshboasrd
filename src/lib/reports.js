@@ -69,40 +69,104 @@ export function paymentMix(reports) {
   return Object.entries(map).map(([account, amount]) => ({ account, amount })).sort((a, b) => b.amount - a.amount)
 }
 
-// Running cash & bank balances. Balance is shown AS OF the end of the selected
-// range (so it changes with the filter) while in/out reflect the period only.
-// in  = day-end collections into the account
-// out = purchases + expenses paid from the account (expenses default to Cash)
-export function computeBalances(config, reports, purchases, expenses, range = null) {
+// How a day's sales were received, per account. If a collection split was
+// entered at upload, use it; otherwise treat the whole sale as cash.
+export function salesByAccount(report, cashName) {
+  const c = report?.day_end?.collections
+  if (c && Object.values(c).some((v) => Number(v) > 0)) {
+    const out = {}
+    Object.entries(c).forEach(([k, v]) => { out[k] = Number(v) || 0 })
+    return out
+  }
+  return { [cashName]: Number(report?.total_sales) || 0 }
+}
+
+// Cash & bank balances under the cash-book model:
+//   sales land in the account they were received in (cash/UPI split)
+//   Cash also pays out deposits (cash → bank)
+//   each account pays out its purchases/expenses/withdrawals
+export function computeBalances(config, data, range = null) {
+  const { reports = [], purchases = [], expenses = [], deposits = [], withdrawals = [] } = data
   const accounts = config?.accounts?.length ? config.accounts : ['Cash']
+  const cashName = accounts[0]
   const to = range?.to || '9999-12-31'
   const from = range?.from || '0000-01-01'
   const inWin = (d) => d >= from && d <= to
   const upTo = (d) => d <= to
 
   return accounts.map((acct) => {
+    const isCash = acct === cashName
     const opening = Number(config?.openings?.[acct]) || 0
     let inToDate = 0, outToDate = 0, periodIn = 0, periodOut = 0
-    reports.forEach((r) => {
-      const amt = Number(r.day_end?.collections?.[acct]) || 0
-      if (!amt) return
-      if (upTo(r.entry_date)) inToDate += amt
-      if (inWin(r.entry_date)) periodIn += amt
+    const addIn = (d, amt) => { if (!amt) return; if (upTo(d)) inToDate += amt; if (inWin(d)) periodIn += amt }
+    const addOut = (d, amt) => { if (!amt) return; if (upTo(d)) outToDate += amt; if (inWin(d)) periodOut += amt }
+
+    reports.forEach((r) => addIn(r.entry_date, salesByAccount(r, cashName)[acct] || 0))
+    deposits.forEach((dp) => {
+      const a = Number(dp.amount) || 0
+      if (dp.to_account === acct) addIn(dp.deposit_date, a)
+      if (isCash) addOut(dp.deposit_date, a) // deposits always leave cash
     })
-    purchases.forEach((p) => {
-      if ((p.paid_from || 'Cash') !== acct) return
-      const amt = Number(p.amount) || 0
-      if (upTo(p.purchase_date)) outToDate += amt
-      if (inWin(p.purchase_date)) periodOut += amt
-    })
-    expenses.forEach((e) => {
-      if ((e.paid_from || 'Cash') !== acct) return
-      const amt = Number(e.amount) || 0
-      if (upTo(e.expense_date)) outToDate += amt
-      if (inWin(e.expense_date)) periodOut += amt
-    })
-    return { account: acct, opening, periodIn, periodOut, balance: opening + inToDate - outToDate }
+    purchases.forEach((p) => { if ((p.paid_from || cashName) === acct) addOut(p.purchase_date, Number(p.amount) || 0) })
+    expenses.forEach((e) => { if ((e.paid_from || cashName) === acct) addOut(e.expense_date, Number(e.amount) || 0) })
+    withdrawals.forEach((w) => { if ((w.from_account || cashName) === acct) addOut(w.withdraw_date, Number(w.amount) || 0) })
+
+    return { account: acct, isCash, opening, periodIn, periodOut, balance: opening + inToDate - outToDate }
   })
+}
+
+// Full day-by-day ledger across ALL accounts and ALL activity dates
+// (reports, expenses, purchases, deposits, withdrawals). Each row carries the
+// cash-flow breakdown plus every account's closing balance that day, so we can
+// show bank availability alongside cash.
+export function buildLedger(config, data) {
+  const { reports = [], purchases = [], expenses = [], deposits = [], withdrawals = [] } = data
+  const accounts = config?.accounts?.length ? config.accounts : ['Cash']
+  const cashName = accounts[0]
+  const sumOn = (arr, dKey, d, aKey) => arr.filter((x) => x[dKey] === d && (x[aKey] || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+
+  const dates = new Set()
+  reports.forEach((r) => dates.add(r.entry_date))
+  expenses.forEach((e) => dates.add(e.expense_date))
+  purchases.forEach((p) => dates.add(p.purchase_date))
+  deposits.forEach((dp) => dates.add(dp.deposit_date))
+  withdrawals.forEach((w) => dates.add(w.withdraw_date))
+  const sorted = [...dates].filter(Boolean).sort()
+
+  const bal = {}
+  accounts.forEach((a) => { bal[a] = Number(config?.openings?.[a]) || 0 })
+  const reportByDate = {}
+  reports.forEach((r) => { reportByDate[r.entry_date] = r })
+
+  const rows = sorted.map((d) => {
+    const r = reportByDate[d]
+    const sba = r ? salesByAccount(r, cashName) : {}
+    const opening = bal[cashName]
+    const sales = sba[cashName] || 0
+    const exp = sumOn(expenses, 'expense_date', d, 'paid_from')
+    const pur = sumOn(purchases, 'purchase_date', d, 'paid_from')
+    const dep = deposits.filter((x) => x.deposit_date === d).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+    const wd = sumOn(withdrawals, 'withdraw_date', d, 'from_account')
+
+    accounts.forEach((a) => {
+      const isCash = a === cashName
+      let delta = sba[a] || 0
+      deposits.filter((x) => x.deposit_date === d).forEach((x) => { if (x.to_account === a) delta += Number(x.amount) || 0; if (isCash) delta -= Number(x.amount) || 0 })
+      purchases.filter((x) => x.purchase_date === d && (x.paid_from || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
+      expenses.filter((x) => x.expense_date === d && (x.paid_from || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
+      withdrawals.filter((x) => x.withdraw_date === d && (x.from_account || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
+      bal[a] += delta
+    })
+
+    return { date: d, hasReport: !!r, opening, sales, exp, pur, dep, wd, out: exp + pur + dep + wd, closing: bal[cashName], balances: { ...bal } }
+  })
+
+  return { accounts, cashName, rows, balances: { ...bal } }
+}
+
+// Backwards-compatible cash chain (report days only) used by the report detail.
+export function buildDayBook(config, data) {
+  return buildLedger(config, data).rows.filter((r) => r.hasReport)
 }
 
 // Purchases grouped by category.

@@ -4,6 +4,7 @@ import { useUI } from '../context/UIContext'
 import * as api from '../lib/db'
 import { R, filterRange, todayStr, PURCHASE_CATEGORIES } from '../lib/helpers'
 import { purchaseMix } from '../lib/reports'
+import { BillPicker, BillView } from '../components/Bill'
 import FilterBar from '../components/FilterBar'
 
 const CAT_ICON = { 'TASMAC Bill': '🍾', Cooldrinks: '🥤', Cigarettes: '🚬', Kitchen: '🍳' }
@@ -14,7 +15,7 @@ export default function Purchases() {
   const accounts = config.accounts?.length ? config.accounts : ['Cash']
   const payOptions = [...accounts, 'Credit']
 
-  const [form, setForm] = useState({ purchase_date: todayStr(), category: PURCHASE_CATEGORIES[0], quantity: '', rate: '', amount: '', paid_from: accounts[0], notes: '' })
+  const [form, setForm] = useState({ purchase_date: todayStr(), category: PURCHASE_CATEGORIES[0], quantity: '', rate: '', amount: '', paid_from: accounts[0], notes: '', bill: null })
   const [busy, setBusy] = useState(false)
 
   // auto amount = qty × rate when both present
@@ -33,10 +34,12 @@ export default function Purchases() {
       await api.addPurchase(uid, {
         purchase_date: form.purchase_date, category: form.category,
         quantity: parseFloat(form.quantity) || 0, rate: parseFloat(form.rate) || 0,
-        amount: effAmount, paid_from: form.paid_from, notes: form.notes || '', created_at: Date.now(),
+        amount: effAmount, paid_from: form.paid_from, notes: form.notes || '',
+        bill_data: form.bill?.data || null, bill_name: form.bill?.name || null, bill_type: form.bill?.type || null,
+        created_at: Date.now(),
       })
       toast('✓ Purchase added')
-      setForm((f) => ({ ...f, quantity: '', rate: '', amount: '', notes: '' }))
+      setForm((f) => ({ ...f, quantity: '', rate: '', amount: '', notes: '', bill: null }))
       await refresh()
     } catch (e) { toast('Error: ' + e.message, true) }
     setBusy(false)
@@ -64,7 +67,8 @@ export default function Purchases() {
             <input type="number" value={autoAmount != null ? autoAmount : form.amount} disabled={autoAmount != null} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} placeholder="0" /></div>
           <div className="ff"><label>Paid from</label>
             <select value={form.paid_from} onChange={(e) => setForm((f) => ({ ...f, paid_from: e.target.value }))}>{payOptions.map((a) => <option key={a}>{a}</option>)}</select></div>
-          <div className="ff" style={{ gridColumn: 'span 3' }}><label>Notes (bill no, supplier…)</label><input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} /></div>
+          <div className="ff" style={{ gridColumn: 'span 2' }}><label>Notes (bill no, supplier…)</label><input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} /></div>
+          <BillPicker bill={form.bill} onPick={(b) => setForm((f) => ({ ...f, bill: b }))} />
         </div>
         <div style={{ marginTop: 12 }}><button className="btn bf" disabled={busy} onClick={add}>{busy ? 'Adding…' : '+ Add purchase'}</button></div>
       </div>
@@ -81,7 +85,7 @@ export default function Purchases() {
       <div className="card">
         {fp.length === 0 ? <div className="notice" style={{ padding: 24 }}>No purchases in this range.</div> : (
           <div className="tw"><table className="tbl">
-            <thead><tr><th>Date</th><th>Category</th><th className="n">Qty</th><th className="n">Rate</th><th className="n">Amount</th><th>Paid from</th><th>Notes</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>Category</th><th className="n">Qty</th><th className="n">Rate</th><th className="n">Amount</th><th>Paid from</th><th>Notes</th><th>Bill</th><th></th></tr></thead>
             <tbody>{fp.map((p) => (
               <tr key={p.id}>
                 <td style={{ whiteSpace: 'nowrap' }}>{p.purchase_date}</td>
@@ -91,6 +95,7 @@ export default function Purchases() {
                 <td className="n" style={{ fontWeight: 700 }}>{R(p.amount)}</td>
                 <td><span className={'badge ' + (p.paid_from === 'Credit' ? 'br-b' : 'bb')}>{p.paid_from || 'Cash'}</span></td>
                 <td style={{ color: 'var(--t2)', fontSize: 12 }}>{p.notes || '—'}</td>
+                <td><BillView bill={{ data: p.bill_data, name: p.bill_name, type: p.bill_type }} /></td>
                 <td><button className="btn br btn-xs" onClick={() => del(p)}>Del</button></td>
               </tr>
             ))}</tbody>

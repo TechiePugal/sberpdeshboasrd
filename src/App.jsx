@@ -11,8 +11,11 @@ import { PAGES } from './components/nav'
 
 import Dashboard from './pages/Dashboard'
 import Upload from './pages/Upload'
+import DayBook from './pages/DayBook'
 import Purchases from './pages/Purchases'
 import Expenses from './pages/Expenses'
+import Deposits from './pages/Deposits'
+import ProfitSplit from './pages/ProfitSplit'
 import Suspense from './pages/Suspense'
 import Profit from './pages/Profit'
 import Reports from './pages/Reports'
@@ -21,9 +24,9 @@ import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 
 const PAGE_COMPONENTS = {
-  dash: Dashboard, upload: Upload, purchases: Purchases,
-  expenses: Expenses, suspense: Suspense, profit: Profit, reports: Reports,
-  records: Records, reportDetail: ReportDetail, settings: Settings,
+  dash: Dashboard, upload: Upload, daybook: DayBook, purchases: Purchases,
+  expenses: Expenses, deposits: Deposits, profitsplit: ProfitSplit, suspense: Suspense,
+  profit: Profit, reports: Reports, records: Records, reportDetail: ReportDetail, settings: Settings,
 }
 
 export default function App() {

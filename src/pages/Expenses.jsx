@@ -5,6 +5,7 @@ import { useData } from '../context/DataContext'
 import { useUI } from '../context/UIContext'
 import * as api from '../lib/db'
 import { R, filterRange, todayStr } from '../lib/helpers'
+import { BillPicker, BillView } from '../components/Bill'
 import FilterBar from '../components/FilterBar'
 import Modal from '../components/Modal'
 
@@ -17,7 +18,7 @@ export default function Expenses() {
   const accounts = config.accounts?.length ? config.accounts : ['Cash']
 
   const [catFilter, setCatFilter] = useState('')
-  const [form, setForm] = useState({ expense_date: todayStr(), category: '', amount: '', paid_from: accounts[0], notes: '' })
+  const [form, setForm] = useState({ expense_date: todayStr(), category: '', amount: '', paid_from: accounts[0], notes: '', bill: null })
   const [busy, setBusy] = useState(false)
   const [edit, setEdit] = useState(null)
 
@@ -42,10 +43,12 @@ export default function Expenses() {
       if (!categories[cat]) await updateCategories({ ...categories, [cat]: categories[cat] || [] })
       await api.addExpense(uid, {
         expense_date: form.expense_date, category: cat, amount: amt,
-        paid_from: form.paid_from, notes: form.notes || '', created_at: Date.now(),
+        paid_from: form.paid_from, notes: form.notes || '',
+        bill_data: form.bill?.data || null, bill_name: form.bill?.name || null, bill_type: form.bill?.type || null,
+        created_at: Date.now(),
       })
       toast('✓ Expense added')
-      setForm((f) => ({ ...f, amount: '', notes: '' }))
+      setForm((f) => ({ ...f, amount: '', notes: '', bill: null }))
       await refresh()
     } catch (e) { toast('Error: ' + e.message, true) }
     setBusy(false)
@@ -89,6 +92,7 @@ export default function Expenses() {
             <select value={form.paid_from} onChange={(e) => setForm((f) => ({ ...f, paid_from: e.target.value }))}>{accounts.map((a) => <option key={a}>{a}</option>)}</select>
           </div>
           <div className="ff" style={{ gridColumn: 'span 2' }}><label>Notes (optional)</label><input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} /></div>
+          <BillPicker bill={form.bill} onPick={(b) => setForm((f) => ({ ...f, bill: b }))} />
         </div>
         <div style={{ marginTop: 12 }}><button className="btn bf" disabled={busy} onClick={add}>{busy ? 'Adding…' : '+ Add expense'}</button></div>
       </div>
@@ -121,6 +125,7 @@ export default function Expenses() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ color: 'var(--red)', fontWeight: 600 }}>{R(e.amount)}</span>
+                    {e.bill_data && <BillView bill={{ data: e.bill_data, name: e.bill_name, type: e.bill_type }} />}
                     <button className="btn bb btn-xs" onClick={() => openEdit(e)}>Edit</button>
                     <button className="btn br btn-xs" onClick={() => del(e)}>Del</button>
                   </div>

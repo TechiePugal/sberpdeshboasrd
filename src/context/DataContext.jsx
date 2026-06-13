@@ -18,6 +18,8 @@ export function DataProvider({ uid, children }) {
   const [stock, setStock] = useState([])
   const [reports, setReports] = useState([])
   const [suspense, setSuspense] = useState([])
+  const [deposits, setDeposits] = useState([])
+  const [withdrawals, setWithdrawals] = useState([])
   const [categories, setCategories] = useState({})
   const [config, setConfig] = useState(api.DEFAULT_CONFIG)
   const [filter, setFilter] = useState(loadSavedFilter)
@@ -30,13 +32,15 @@ export function DataProvider({ uid, children }) {
 
   const refresh = useCallback(async () => {
     if (!uid) return
-    const { sales, expenses, purchases, stock, reports, suspense } = await api.loadAll(uid)
+    const { sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals } = await api.loadAll(uid)
     setSales(sales)
     setExpenses(expenses)
     setPurchases(purchases)
     setStock(stock)
     setReports(reports)
     setSuspense(suspense)
+    setDeposits(deposits)
+    setWithdrawals(withdrawals)
   }, [uid])
 
   const refreshCategories = useCallback(async () => {
@@ -75,7 +79,7 @@ export function DataProvider({ uid, children }) {
 
   return (
     <DataContext.Provider
-      value={{ uid, sales, expenses, purchases, stock, reports, suspense, categories, config, filter, loading, applyFilter, refresh, refreshCategories, refreshConfig, updateCategories, updateConfig }}
+      value={{ uid, sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals, categories, config, filter, loading, applyFilter, refresh, refreshCategories, refreshConfig, updateCategories, updateConfig }}
     >
       {children}
     </DataContext.Provider>

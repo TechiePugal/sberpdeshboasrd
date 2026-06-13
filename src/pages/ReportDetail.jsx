@@ -7,7 +7,7 @@ import { useData } from '../context/DataContext'
 import { useUI } from '../context/UIContext'
 import * as api from '../lib/db'
 import { R } from '../lib/helpers'
-import { categoryMix } from '../lib/reports'
+import { categoryMix, buildDayBook } from '../lib/reports'
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 const COLORS = ['#0071e3', '#1a9e4b', '#b25e00', '#d70015', '#8944ab', '#00a3a3', '#e8590c', '#c2255c', '#1098ad', '#5f3dc4']
@@ -21,7 +21,7 @@ const SORTS = [
 ]
 
 export default function ReportDetail({ onNav, initialDate }) {
-  const { uid, reports, refresh } = useData()
+  const { uid, reports, expenses, purchases, deposits, withdrawals, config, refresh } = useData()
   const { toast, confirm } = useUI()
   const [sortK, setSortK] = useState('amount')
 
@@ -31,8 +31,10 @@ export default function ReportDetail({ onNav, initialDate }) {
   const sellers = useMemo(() => items.filter((i) => i.amount > 0).sort((a, b) => b.amount - a.amount), [items])
   const catMix = useMemo(() => (report ? categoryMix([report]) : []), [report])
   const allSorted = useMemo(() => [...items].sort((a, b) => (b[sortK] || 0) - (a[sortK] || 0)), [items, sortK])
-  const collections = report?.day_end?.collections || {}
-  const collEntries = Object.entries(collections).filter(([, v]) => v > 0)
+  const dayBookRow = useMemo(() => {
+    const book = buildDayBook(config, { reports, expenses, purchases, deposits, withdrawals })
+    return book.find((b) => b.date === initialDate)
+  }, [config, reports, expenses, purchases, deposits, withdrawals, initialDate])
 
   if (!report) {
     return (
@@ -107,15 +109,18 @@ export default function ReportDetail({ onNav, initialDate }) {
           <div className="dr tot"><span className="dl">Gross margin</span><span className="dv b">{margin}%</span></div>
         </div>
         <div className="card">
-          <div className="ch"><h3>💵 Day-end collection</h3></div>
-          {collEntries.length ? (
+          <div className="ch"><h3>🧾 Day book (cash)</h3></div>
+          {dayBookRow ? (
             <>
-              <div style={{ height: 180, display: 'grid', placeItems: 'center', marginBottom: 8 }}>
-                <Doughnut data={{ labels: collEntries.map(([a]) => a), datasets: [{ data: collEntries.map(([, v]) => v), backgroundColor: COLORS, borderWidth: 0 }] }} options={{ ...chartOpts, plugins: { legend: { display: true, position: 'right' } } }} />
-              </div>
-              {collEntries.map(([acct, v]) => <div className="dr" key={acct}><span className="dl">{acct}</span><span className="dv b">{R(v)}</span></div>)}
+              <div className="dr"><span className="dl">Opening balance</span><span className="dv">{R(dayBookRow.opening)}</span></div>
+              <div className="dr"><span className="dl">+ Sales</span><span className="dv g">{R(dayBookRow.sales)}</span></div>
+              <div className="dr"><span className="dl">− Cash expenses</span><span className="dv r">{R(dayBookRow.exp)}</span></div>
+              <div className="dr"><span className="dl">− Cash purchases</span><span className="dv r">{R(dayBookRow.pur)}</span></div>
+              <div className="dr"><span className="dl">− Bank deposits</span><span className="dv a">{R(dayBookRow.dep)}</span></div>
+              <div className="dr"><span className="dl">− Withdrawals</span><span className="dv p">{R(dayBookRow.wd)}</span></div>
+              <div className="dr tot"><span className="dl">Closing balance</span><span className="dv b">{R(dayBookRow.closing)}</span></div>
             </>
-          ) : <div className="notice">No day-end split saved for this day.</div>}
+          ) : <div className="notice">Day book line will appear once this day is in the cash chain.</div>}
         </div>
       </div>
 

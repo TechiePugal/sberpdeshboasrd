@@ -28,12 +28,11 @@ export default function Upload({ onNav }) {
       setDraft(res.record)
       setWarnings(res.warnings || [])
       const ex = reports.find((r) => r.entry_date === res.record.entry_date)
-      // seed collections: existing values, else put full sales into Cash as a starting point
       const seed = {}
       accounts.forEach((a) => { seed[a] = ex?.day_end?.collections?.[a] ?? '' })
-      if (!ex && accounts[0]) seed[accounts[0]] = res.record.total_sales
+      if (!ex && accounts[0]) seed[accounts[0]] = res.record.total_sales // default: all to cash
       setColl(seed)
-      toast('✓ Extracted — review and split the collection below')
+      toast('✓ Extracted — split the sales by payment method and save')
     } catch (e) {
       toast('Extract failed: ' + e.message, true)
     }
@@ -47,7 +46,7 @@ export default function Upload({ onNav }) {
   })
 
   const collectedTotal = accounts.reduce((a, acct) => a + (parseFloat(coll[acct]) || 0), 0)
-  const diff = draft ? draft.total_sales - collectedTotal : 0
+  const collDiff = draft ? (draft.total_sales || 0) - collectedTotal : 0
 
   async function save() {
     setBusy('save')
@@ -123,7 +122,8 @@ export default function Upload({ onNav }) {
           </div>
 
           <div className="card">
-            <div className="ch"><h3>💵 Day-end collection (Cash & Bank)</h3><small style={{ color: 'var(--t2)' }}>how today's sales came in</small></div>
+            <div className="ch"><h3>💵 Sales by payment method</h3><small style={{ color: 'var(--t2)' }}>how the {R(draft.total_sales)} came in</small></div>
+            <div className="info-box">Enter how much of the day's sales came via each method. The total must equal <strong>Total Sales</strong>. Each amount lands in that account (cash sales → Cash, Paytm sales → Paytm, etc.).</div>
             <div className="fg3">
               {accounts.map((acct) => (
                 <div className="ff" key={acct}><label>{acct} (₹)</label>
@@ -131,11 +131,15 @@ export default function Upload({ onNav }) {
               ))}
             </div>
             <div className="krow" style={{ marginTop: 8 }}>
-              <div className="kc b"><div className="kl">Collected</div><div className="kv">{R(collectedTotal)}</div></div>
+              <div className="kc b"><div className="kl">Entered total</div><div className="kv">{R(collectedTotal)}</div></div>
               <div className="kc g"><div className="kl">Total Sales</div><div className="kv">{R(draft.total_sales)}</div></div>
-              <div className={'kc ' + (Math.abs(diff) < 1 ? 'g' : 'r')}><div className="kl">{diff > 0 ? 'Short / not collected' : diff < 0 ? 'Over collected' : 'Reconciled'}</div><div className="kv">{R(Math.abs(diff))}</div><div className="ks">{Math.abs(diff) < 1 ? '✓ matches sales' : 'sales − collected'}</div></div>
+              <div className={'kc ' + (Math.abs(collDiff) < 1 ? 'g' : 'r')}>
+                <div className="kl">{Math.abs(collDiff) < 1 ? 'Matched' : collDiff > 0 ? 'Short by' : 'Over by'}</div>
+                <div className="kv">{Math.abs(collDiff) < 1 ? '✓' : R(Math.abs(collDiff))}</div>
+                <div className="ks">must equal sales</div>
+              </div>
             </div>
-            {diff > 0 && <div className="info-box" style={{ marginTop: 8 }}>Tip: the un-collected {R(diff)} is usually credit / UPI pending — add it in the <strong>Suspense</strong> menu so cash-in-hand stays correct.</div>}
+            {Math.abs(collDiff) >= 1 && <div className="info-box" style={{ marginTop: 8, borderColor: 'var(--amb)' }}>⚠️ The split ({R(collectedTotal)}) doesn't match Total Sales ({R(draft.total_sales)}). You can still save, but balances will use the amounts you entered.</div>}
           </div>
 
           {topItems.length > 0 && (

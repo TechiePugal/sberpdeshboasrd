@@ -15,16 +15,26 @@ async function loadCollection(uid, name, orderField) {
 }
 
 export async function loadAll(uid) {
-  const [sales, expenses, purchases, stock, reports, suspense] = await Promise.all([
+  const [sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals] = await Promise.all([
     loadCollection(uid, 'sales', 'entry_date'),
     loadCollection(uid, 'expenses', 'expense_date'),
     loadCollection(uid, 'purchases', 'purchase_date'),
     loadCollection(uid, 'stock', 'entry_date'),
     loadCollection(uid, 'dailyReports', 'entry_date'),
     loadCollection(uid, 'suspense', 'suspense_date'),
+    loadCollection(uid, 'deposits', 'deposit_date'),
+    loadCollection(uid, 'withdrawals', 'withdraw_date'),
   ])
-  return { sales, expenses, purchases, stock, reports, suspense }
+  return { sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals }
 }
+
+// ── Bank deposits (move cash → a bank account) ───────────
+export async function addDeposit(uid, row) { await addDoc(col(uid, 'deposits'), row) }
+export async function deleteDeposit(uid, id) { await deleteDoc(docRef(uid, 'deposits', id)) }
+
+// ── Profit withdrawals (month-end split) ─────────────────
+export async function addWithdrawal(uid, row) { await addDoc(col(uid, 'withdrawals'), row) }
+export async function deleteWithdrawal(uid, id) { await deleteDoc(docRef(uid, 'withdrawals', id)) }
 
 // ── Suspense (separate ledger: money booked, not in hand) ─
 export async function addSuspense(uid, row) {

@@ -17,7 +17,7 @@ const COLORS = ['#0071e3', '#1a9e4b', '#b25e00', '#d70015', '#8944ab', '#00a3a3'
 const chartOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
 
 export default function Dashboard({ onNav }) {
-  const { reports, expenses, purchases, suspense, config, filter, loading } = useData()
+  const { reports, expenses, purchases, suspense, deposits, withdrawals, config, filter, loading } = useData()
   const [showRecs, setShowRecs] = useState(false)
 
   const fr = filterRange(reports, 'entry_date', filter)
@@ -27,7 +27,7 @@ export default function Dashboard({ onNav }) {
   const agg = useMemo(() => aggregate(fr, fe, fp, config, filter, fsus), [fr, fe, fp, config, filter, fsus])
   const items = useMemo(() => mergeItems(fr), [fr])
   const catMix = useMemo(() => categoryMix(fr), [fr])
-  const balances = useMemo(() => computeBalances(config, reports, purchases, expenses, filter), [config, reports, purchases, expenses, filter])
+  const balances = useMemo(() => computeBalances(config, { reports, purchases, expenses, deposits, withdrawals }, filter), [config, reports, purchases, expenses, deposits, withdrawals, filter])
   const recs = useMemo(() => buildRecommendations(agg, items, fe), [agg, items, fe])
   const currentBalance = balances.reduce((a, b) => a + b.balance, 0)
 

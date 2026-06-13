@@ -1,57 +1,55 @@
 # Siruvani Bar — Financial Management
 
-Upload the daily TASMAC reports; the app extracts the figures and turns them
-into a full financial system: Purchases, Sales & Profit, Expenses, running
-Cash & Bank balances, and printable reports — all driven by one saved date
-filter.
+Upload the daily TASMAC report → the app extracts the figures → it drives a full
+cash/profit system: a Day Book, Purchases, Expenses, Bank Deposits, Profit
+Splits, Sales & Profit and printable Reports — all under one saved date filter.
 
-## The global filter (set → Apply)
-Every analysis page has a **Period** bar: pick Today / This week / This month /
-Last month / custom dates, then press **Apply filter**. The choice is **saved**
-and **reflects on every page** (Dashboard, Sales & Profit, Purchases, Expenses,
-Suspense, Reports, Records). It does not update live — only on Apply.
+## Money model (how it all connects)
+- **Cash** receives the day's **sales** (from the uploaded report).
+- Cash goes **out** via: cash expenses, cash purchases, **bank deposits**, and
+  **profit withdrawals** paid in cash.
+- **Bank accounts** (GPay, Paytm, etc.) receive **deposits** (cash → bank) and
+  pay out bank purchases/expenses/withdrawals.
+- **Day Book** = the daily cash chain:
+  `opening (yesterday's closing) + sales − (expenses + purchases + deposits + withdrawals paid in cash) = closing`.
+  Closing carries forward as the next working day's opening. A working day = a
+  day a report was uploaded.
 
-## Modules
-- **Dashboard** — headline **Total Income**, **Total Expense**, **Current
-  Balance**, plus gross/net profit, lease, purchases, suspense, cash & bank
-  balances, trend, top sellers, category split and a P&L. A **Report** button
-  prints / saves it as PDF.
-- **Upload Report** — attach the Closing Stock (and optional Sales) PDF →
-  figures + quantities are read automatically → enter the day-end Cash/Bank
-  split → Save. The PDF is not stored, only the values.
-- **Purchases** — record purchases with **quantity, rate and value** (amount
-  auto-calculates from qty × rate), category (TASMAC Bill / Cooldrinks /
-  Cigarettes / Kitchen), paid-from account, notes, and full history.
-- **Expenses** — add expenses manually with a reason/category and paid-from
-  account; grouped history and by-reason chart.
-- **Suspense** — separate ledger for money booked but not in hand.
-- **Sales & Profit** — qty purchased, qty sold, remaining stock, revenue, COGS,
-  gross profit, and a full product-level sales/profit breakdown.
-- **Reports** — Monthly, Sales Breakdown, Purchases, Expenses, Profit & Loss,
-  and Overall — each printable, all driven by the global filter.
-- **Records** — saved daily reports; tap one to open its full report page with
-  charts.
-- **Settings** — payment accounts + opening balances, Lease Mode, and the
-  Suspense toggle.
+## Pages
+- **Dashboard** — Total Income · Total Expense · Current Balance, plus profit,
+  balances, trend, top sellers and P&L. Print/Save-PDF.
+- **Upload Report** — extract the day's figures + quantities and save (no PDF
+  stored, no manual splitting; sales flow into the Day Book automatically).
+- **Day Book** — daily cash flow: opening → sales → cash-out → closing, with a
+  status per day. Pulls sales from the report.
+- **Purchases** — qty, rate, value, category, paid-from account (Cash / a bank /
+  Credit).
+- **Expenses** — manual add with reason + paid-from account.
+- **Bank Deposit** — move cash into a bank account; maintains bank balances.
+- **Profit Split** — month-end withdrawals from a chosen account (reduces that
+  balance; not counted as an expense).
+- **Suspense** — money booked but not in hand (toggle in Settings controls
+  whether it is reduced at month-end).
+- **Sales & Profit** — qty purchased / sold / remaining, revenue, profit, and a
+  product breakdown.
+- **Reports** — Monthly, Sales Breakdown, Purchases, Expenses, P&L, Overall —
+  all printable.
+- **Records** — saved reports; open any day for a full report page (charts +
+  its Day Book line).
+- **Settings** — accounts + opening balances (the **first account = Cash** and
+  its opening seeds the Day Book), Lease Mode, Suspense toggle.
 
-## Key logic
-- **Lease** accrues at **daily amount × working days**, where a working day =
-  a day you uploaded a report in the selected period. It is added to profit
-  (recognised month-end).
-- **Suspense toggle** (Settings, default **NO**): NO = suspense is shown but
-  ignored in profit/cash. YES = suspense is **reduced at month-end** — deducted
-  from net profit / cash-in-hand and listed in the monthly P&L.
-- **Balances** = opening + collections − purchases − expenses (per account),
-  shown as of the end of the selected period.
-- Headline figures (sales, COGS, stock, quantities) come from the stock
-  report's exact summary; item analytics cover ~90% of sale lines.
+## The filter (set → Apply → saved, everywhere)
+Pick Today / This week / This month / custom on the **Period** bar and press
+**Apply filter**. It saves and reflects on every page; it never updates live.
 
 ## Setup
 1. `npm install`
-2. Firebase console: enable **Authentication → Email/Password** and
-   **Firestore Database**. (Storage is not used — no Blaze plan needed.)
-3. Paste `firestore.rules` into Firestore → Rules and Publish.
-4. `npm run dev` → create an account → set accounts in **Settings** → upload.
+2. Firebase: enable **Authentication → Email/Password** and **Firestore**.
+   (Storage is not used.)
+3. Publish `firestore.rules`.
+4. `npm run dev` → create account → in **Settings** set Cash opening balance and
+   add your bank accounts → upload a report.
 
 ## Build
 `npm run build` → static files in `dist/`.
