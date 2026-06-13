@@ -10,19 +10,23 @@ export const ICONS = {
   expenses: I(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   suspense: I(<><path d="M5 22h14" /><path d="M5 2h14" /><path d="M17 22v-4.17a2 2 0 00-.59-1.42L12 12l-4.41 4.41A2 2 0 007 17.83V22" /><path d="M7 2v4.17a2 2 0 00.59 1.42L12 12l4.41-4.41A2 2 0 0017 6.17V2" /></>),
   records: I(<><path d="M4 4h16v4H4z" /><path d="M4 10h16v10H4z" /><line x1="8" y1="14" x2="16" y2="14" /><line x1="8" y1="17" x2="13" y2="17" /></>),
+  profit: I(<><polyline points="3 17 9 11 13 15 21 7" /><polyline points="14 7 21 7 21 14" /></>),
+  reports: I(<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="16" y2="17" /></>),
   settings: I(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.82 1.17V21a2 2 0 01-4 0v-.09A1.65 1.65 0 007 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 14H4.5a2 2 0 010-4h.09A1.65 1.65 0 006 7a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 0010 4.6V4.5a2 2 0 014 0v.09a1.65 1.65 0 002.82 1.17 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 10v.09a1.65 1.65 0 001.17 2.82h.09a2 2 0 010 4h-.09a1.65 1.65 0 00-1.17.18z" /></>),
   more: I(<><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>),
 }
 
 export const PAGES = [
-  { id: 'dash', label: 'Dashboard', title: 'Analytics Dashboard', section: 'Main' },
+  { id: 'dash', label: 'Dashboard', title: 'Dashboard', section: 'Main' },
   { id: 'upload', label: 'Upload Report', title: 'Upload Daily Report', section: 'Main' },
   { id: 'purchases', label: 'Purchases', title: 'Purchases', section: 'Entries' },
   { id: 'expenses', label: 'Expenses', title: 'Expenses', section: 'Entries' },
   { id: 'suspense', label: 'Suspense', title: 'Suspense', section: 'Entries' },
-  { id: 'records', label: 'Records', title: 'Saved Reports', section: 'Reports' },
-  { id: 'settings', label: 'Settings', title: 'Settings', section: 'Reports' },
+  { id: 'profit', label: 'Sales & Profit', title: 'Sales & Profit', section: 'Analysis' },
+  { id: 'reports', label: 'Reports', title: 'Reports', section: 'Analysis' },
+  { id: 'records', label: 'Records', title: 'Saved Reports', section: 'Analysis' },
+  { id: 'settings', label: 'Settings', title: 'Settings', section: 'Setup' },
 ]
 
-export const MOBILE_PRIMARY = ['dash', 'upload', 'purchases', 'records']
-export const MOBILE_MORE = ['expenses', 'suspense', 'settings']
+export const MOBILE_PRIMARY = ['dash', 'upload', 'reports', 'records']
+export const MOBILE_MORE = ['purchases', 'expenses', 'suspense', 'profit', 'settings']

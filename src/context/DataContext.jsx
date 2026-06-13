@@ -1,8 +1,15 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import * as api from '../lib/db'
+import { defaultRange } from '../lib/ranges'
 
 const DataContext = createContext(null)
 export const useData = () => useContext(DataContext)
+
+const FILTER_KEY = 'siruvani_filter'
+function loadSavedFilter() {
+  try { const s = localStorage.getItem(FILTER_KEY); if (s) return JSON.parse(s) } catch { /* ignore */ }
+  return defaultRange()
+}
 
 export function DataProvider({ uid, children }) {
   const [sales, setSales] = useState([])
@@ -13,7 +20,13 @@ export function DataProvider({ uid, children }) {
   const [suspense, setSuspense] = useState([])
   const [categories, setCategories] = useState({})
   const [config, setConfig] = useState(api.DEFAULT_CONFIG)
+  const [filter, setFilter] = useState(loadSavedFilter)
   const [loading, setLoading] = useState(true)
+
+  const applyFilter = useCallback((range) => {
+    setFilter(range)
+    try { localStorage.setItem(FILTER_KEY, JSON.stringify(range)) } catch { /* ignore */ }
+  }, [])
 
   const refresh = useCallback(async () => {
     if (!uid) return
@@ -62,7 +75,7 @@ export function DataProvider({ uid, children }) {
 
   return (
     <DataContext.Provider
-      value={{ uid, sales, expenses, purchases, stock, reports, suspense, categories, config, loading, refresh, refreshCategories, refreshConfig, updateCategories, updateConfig }}
+      value={{ uid, sales, expenses, purchases, stock, reports, suspense, categories, config, filter, loading, applyFilter, refresh, refreshCategories, refreshConfig, updateCategories, updateConfig }}
     >
       {children}
     </DataContext.Provider>

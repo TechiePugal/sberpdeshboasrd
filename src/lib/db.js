@@ -81,6 +81,7 @@ export const DEFAULT_CONFIG = {
   lease_mode: false,
   leased: {},
   lease_amounts: {},
+  reduce_suspense: false,
 }
 export async function loadConfig(uid) {
   const snap = await getDoc(docRef(uid, 'settings', 'appConfig'))

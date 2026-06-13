@@ -5,25 +5,23 @@ import { useData } from '../context/DataContext'
 import { useUI } from '../context/UIContext'
 import * as api from '../lib/db'
 import { R, filterRange, todayStr } from '../lib/helpers'
-import { defaultRange } from '../lib/ranges'
-import RangePicker from '../components/RangePicker'
+import FilterBar from '../components/FilterBar'
 import Modal from '../components/Modal'
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 const COLORS = ['#0071e3', '#1a9e4b', '#b25e00', '#d70015', '#8944ab', '#00a3a3', '#e8590c', '#c2255c', '#1098ad', '#5f3dc4']
 
 export default function Expenses() {
-  const { uid, expenses, categories, config, refresh, updateCategories } = useData()
+  const { uid, expenses, categories, config, filter, refresh, updateCategories } = useData()
   const { toast, confirm } = useUI()
   const accounts = config.accounts?.length ? config.accounts : ['Cash']
 
-  const [range, setRange] = useState(defaultRange())
   const [catFilter, setCatFilter] = useState('')
   const [form, setForm] = useState({ expense_date: todayStr(), category: '', amount: '', paid_from: accounts[0], notes: '' })
   const [busy, setBusy] = useState(false)
   const [edit, setEdit] = useState(null)
 
-  const inRange = filterRange(expenses, 'expense_date', range)
+  const inRange = filterRange(expenses, 'expense_date', filter)
   const cats = [...new Set(inRange.map((e) => e.category).filter(Boolean))].sort()
   const filtered = catFilter ? inRange.filter((e) => e.category === catFilter) : inRange
   const total = filtered.reduce((a, e) => a + (e.amount || 0), 0)
@@ -97,7 +95,7 @@ export default function Expenses() {
 
       <div className="card no-print">
         <div className="ch"><h3>Expenses</h3><small style={{ color: 'var(--t2)' }}>{filtered.length} entries · {R(total)}</small></div>
-        <RangePicker range={range} onChange={setRange} />
+        <FilterBar />
         <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <label style={{ fontSize: 13, color: 'var(--t2)' }}>Filter:</label>
           <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} style={{ fontSize: 13, padding: '6px 10px', border: '1px solid var(--bd-strong)', borderRadius: 8, background: 'var(--surface)' }}>

@@ -24,6 +24,7 @@ export default function Settings() {
   })
 
   const toggleLease = () => setCfg((c) => ({ ...c, lease_mode: !c.lease_mode }))
+  const toggleSuspense = () => setCfg((c) => ({ ...c, reduce_suspense: !c.reduce_suspense }))
   const toggleModule = (id) => setCfg((c) => ({ ...c, leased: { ...c.leased, [id]: !c.leased?.[id] } }))
   const setLeaseAmt = (id, v) => setCfg((c) => ({ ...c, lease_amounts: { ...c.lease_amounts, [id]: parseFloat(v) || 0 } }))
 
@@ -55,7 +56,7 @@ export default function Settings() {
         <div className="ch"><h3>🔑 Lease Mode</h3>
           <button className={'btn btn-sm ' + (cfg.lease_mode ? 'bf' : 'bo')} onClick={toggleLease}>{cfg.lease_mode ? 'ON' : 'OFF'}</button>
         </div>
-        <div className="info-box">Turn this on when you lease out part of the business. Pick which modules are leased and set the <strong>daily lease amount</strong> you receive for each — it is booked as income instead of tracking that module's sales.</div>
+        <div className="info-box">Turn this on when you lease out part of the business. Pick which modules are leased and set the <strong>daily lease amount</strong> you receive for each. It is booked as income at <strong>lease × working days</strong>, where a working day = a day you uploaded a report. The lease total is added to profit (recognised month-end).</div>
         {cfg.lease_mode && (
           <>
             {MODULES.map((m) => (
@@ -76,6 +77,16 @@ export default function Settings() {
             </div>
           </>
         )}
+      </div>
+
+      <div className="card">
+        <div className="ch"><h3>⏳ Suspense handling</h3>
+          <button className={'btn btn-sm ' + (cfg.reduce_suspense ? 'bf' : 'bo')} onClick={toggleSuspense}>{cfg.reduce_suspense ? 'YES' : 'NO'}</button>
+        </div>
+        <div className="info-box">
+          Default is <strong>NO</strong> — suspense is shown but <strong>not</strong> deducted from profit or cash (ignored in the dashboard).
+          Switch to <strong>YES</strong> to <strong>reduce the suspense amount at month-end</strong>: it is then subtracted from net profit / cash-in-hand and listed in the monthly Profit &amp; Loss report.
+        </div>
       </div>
 
       <div className="card" style={{ position: 'sticky', bottom: 0 }}>

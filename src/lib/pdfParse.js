@@ -52,11 +52,11 @@ export function parseStockReport(rows) {
   for (const r of rows) {
     if (/SIRUVANI BAR|TIRUPUR|STOCK REPORT|ITEMNAME|OP\.STK|ML \/ UNIT|PARTICULAR|^LIQUOR|^BEER :|^TIN BEER|^WINE :|PROFIT/i.test(r)) {
       const gt = r.match(/GRAND TOTAL\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i)
-      if (gt) { out.summary.totQty = +gt[1]; out.summary.saleQty = +gt[4]; out.summary.closeQty = +gt[5] }
+      if (gt) { out.summary.openQty = +gt[1]; out.summary.purchQty = +gt[2]; out.summary.saleQty = +gt[4]; out.summary.closeQty = +gt[5] }
       nameBuf = ''; continue
     }
     const gt = r.match(/GRAND TOTAL\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i)
-    if (gt) { out.summary.totQty = +gt[1]; out.summary.saleQty = +gt[4]; out.summary.closeQty = +gt[5]; nameBuf = ''; continue }
+    if (gt) { out.summary.openQty = +gt[1]; out.summary.purchQty = +gt[2]; out.summary.saleQty = +gt[4]; out.summary.closeQty = +gt[5]; nameBuf = ''; continue }
 
     const upper = r.toUpperCase().trim()
     const hdr = CATEGORY_HEADERS.find((h) => upper === h)
@@ -166,6 +166,10 @@ export async function parseDailyUpload(stockFile, salesFile) {
     cogs,
     gross_profit: grossProfit,
     total_qty_sold: s.saleQty ?? sales?.qty ?? 0,
+    sold_qty: s.saleQty ?? sales?.qty ?? 0,
+    opening_qty: s.openQty ?? 0,
+    purchase_qty: s.purchQty ?? 0,
+    closing_qty: s.closeQty ?? 0,
     opening_stock_cost: s.openingPurch ?? 0,
     closing_stock_cost: s.closingPurch ?? 0,
     closing_stock_sale_value: s.closingSales ?? 0,

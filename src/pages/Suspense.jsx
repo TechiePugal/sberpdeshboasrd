@@ -3,17 +3,15 @@ import { useData } from '../context/DataContext'
 import { useUI } from '../context/UIContext'
 import * as api from '../lib/db'
 import { R, filterRange, todayStr } from '../lib/helpers'
-import { defaultRange } from '../lib/ranges'
-import RangePicker from '../components/RangePicker'
+import FilterBar from '../components/FilterBar'
 
 export default function Suspense() {
-  const { uid, suspense, refresh } = useData()
+  const { uid, suspense, filter, refresh } = useData()
   const { toast, confirm } = useUI()
-  const [range, setRange] = useState(defaultRange())
   const [form, setForm] = useState({ suspense_date: todayStr(), amount: '', reason: '' })
   const [busy, setBusy] = useState(false)
 
-  const fs = filterRange(suspense, 'suspense_date', range).slice().reverse()
+  const fs = filterRange(suspense, 'suspense_date', filter).slice().reverse()
   const total = useMemo(() => fs.reduce((a, s) => a + (Number(s.amount) || 0), 0), [fs])
 
   async function add() {
@@ -55,7 +53,7 @@ export default function Suspense() {
 
       <div className="card no-print">
         <div className="ch"><h3>Suspense entries</h3><small style={{ color: 'var(--t2)' }}>{fs.length} entries</small></div>
-        <RangePicker range={range} onChange={setRange} />
+        <FilterBar />
         <div className="krow" style={{ marginTop: 12, marginBottom: 0 }}>
           <div className="kc p"><div className="kl">Total suspense (range)</div><div className="kv">{R(total)}</div><div className="ks">not in hand</div></div>
         </div>

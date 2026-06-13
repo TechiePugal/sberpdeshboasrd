@@ -14,14 +14,16 @@ import Upload from './pages/Upload'
 import Purchases from './pages/Purchases'
 import Expenses from './pages/Expenses'
 import Suspense from './pages/Suspense'
+import Profit from './pages/Profit'
+import Reports from './pages/Reports'
 import Records from './pages/Records'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 
 const PAGE_COMPONENTS = {
   dash: Dashboard, upload: Upload, purchases: Purchases,
-  expenses: Expenses, suspense: Suspense, records: Records,
-  reportDetail: ReportDetail, settings: Settings,
+  expenses: Expenses, suspense: Suspense, profit: Profit, reports: Reports,
+  records: Records, reportDetail: ReportDetail, settings: Settings,
 }
 
 export default function App() {

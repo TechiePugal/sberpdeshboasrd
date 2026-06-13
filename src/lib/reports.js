@@ -16,22 +16,32 @@ export function leasedModuleLabels(config) {
 // Aggregate reports + expenses + purchases over a filtered range.
 export function aggregate(reports, expenses, purchases = [], config = {}, range = null, suspense = []) {
   const rs = [...reports].sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+  const workingDays = rs.length // a "working day" = a day a report was uploaded
   const totSales = sum(rs, 'total_sales')
   const totCogs = sum(rs, 'cogs')
   const gross = totSales - totCogs
   const totExp = sum(expenses, 'amount')
   const totPurch = sum(purchases, 'amount')
   const totSuspense = sum(suspense, 'amount')
+  const reduceSuspense = !!config.reduce_suspense
 
+  // quantity tracking
+  const qtyPurchased = sum(rs, 'purchase_qty')
+  const qtySold = sum(rs, 'sold_qty') || sum(rs, 'total_qty_sold')
+  const latest = rs[rs.length - 1] || null
+  const qtyRemaining = latest?.closing_qty || 0
+
+  // lease accrues per working (uploaded) day; recognised into profit at month end
   const leaseDay = leaseDailyTotal(config)
-  const leaseIncome = leaseDay > 0 && range ? leaseDay * daysBetween(range.from, range.to) : 0
+  const leaseIncome = leaseDay * workingDays
 
-  const net = gross - totExp + leaseIncome
-  const cashInHand = totSales - totSuspense - totExp
+  const suspenseAdj = reduceSuspense ? totSuspense : 0
+  const totIncome = totSales + leaseIncome
+  const net = gross - totExp + leaseIncome - suspenseAdj
+  const cashInHand = totSales - suspenseAdj - totExp
   const gpm = totSales > 0 ? +((gross / totSales) * 100).toFixed(1) : 0
   const npm = totSales > 0 ? +((net / totSales) * 100).toFixed(1) : 0
   const expRatio = totSales > 0 ? +((totExp / totSales) * 100).toFixed(1) : 0
-  const latest = rs[rs.length - 1] || null
 
   const trend = rs.map((r) => ({
     date: r.entry_date,
@@ -40,7 +50,8 @@ export function aggregate(reports, expenses, purchases = [], config = {}, range 
   }))
 
   return {
-    days: rs.length, totSales, totCogs, gross, totExp, totPurch, net, totSuspense, cashInHand,
+    days: rs.length, workingDays, totSales, totCogs, gross, totExp, totPurch, net, totSuspense, cashInHand,
+    reduceSuspense, suspenseAdj, totIncome, qtyPurchased, qtySold, qtyRemaining,
     gpm, npm, expRatio, latest, trend, leaseIncome, leaseDay,
     leaseModules: leasedModuleLabels(config),
     closingStockValue: latest?.closing_stock_sale_value || 0,

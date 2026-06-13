@@ -1,17 +1,14 @@
-import { useState } from 'react'
 import { useData } from '../context/DataContext'
 import { useUI } from '../context/UIContext'
 import * as api from '../lib/db'
 import { R, filterRange } from '../lib/helpers'
-import { defaultRange } from '../lib/ranges'
-import RangePicker from '../components/RangePicker'
+import FilterBar from '../components/FilterBar'
 
 export default function Records({ onNav }) {
-  const { uid, reports, refresh } = useData()
+  const { uid, reports, filter, refresh } = useData()
   const { toast, confirm } = useUI()
-  const [range, setRange] = useState(defaultRange())
 
-  const fr = filterRange(reports, 'entry_date', range).slice().reverse()
+  const fr = filterRange(reports, 'entry_date', filter).slice().reverse()
 
   function del(e, r) {
     e.stopPropagation()
@@ -25,7 +22,7 @@ export default function Records({ onNav }) {
     <>
       <div className="card no-print">
         <div className="ch"><h3>Saved reports</h3><small style={{ color: 'var(--t2)' }}>{fr.length} day(s) · tap a row to open the full report</small></div>
-        <RangePicker range={range} onChange={setRange} />
+        <FilterBar />
       </div>
 
       <div className="card">
