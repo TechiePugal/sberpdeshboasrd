@@ -126,15 +126,32 @@ export default function Dashboard({ onNav }) {
         </div>
       </div>
 
-      <div className="card">
-        <div className="ch"><h3>Profit & loss</h3><button className="btn bo btn-xs no-print" onClick={() => onNav('reports')}>Full reports →</button></div>
-        <div className="dr"><span className="dl">Total Sales</span><span className="dv g">{R(agg.totSales)}</span></div>
-        <div className="dr"><span className="dl">Less: COGS</span><span className="dv a">{R(agg.totCogs)}</span></div>
-        <div className="dr tot"><span className="dl">Gross Profit</span><span className="dv b">{R(agg.gross)}</span></div>
-        {agg.leaseIncome > 0 && <div className="dr"><span className="dl">Add: Lease income</span><span className="dv g">{R(agg.leaseIncome)}</span></div>}
-        <div className="dr"><span className="dl">Less: Expenses</span><span className="dv r">{R(agg.totExp)}</span></div>
-        {agg.reduceSuspense && <div className="dr"><span className="dl">Less: Suspense (month-end)</span><span className="dv r">{R(agg.totSuspense)}</span></div>}
-        <div className="dr tot"><span className="dl">Net Profit</span><span className={'dv ' + (agg.net >= 0 ? 'g' : 'r')}>{R(agg.net)}</span></div>
+      <div className="g2">
+        <div className="card">
+          <div className="ch"><h3>📦 Stock → profit</h3><button className="btn bo btn-xs no-print" onClick={() => onNav('stock')}>Current stock →</button></div>
+          <div className="dr"><span className="dl">Opening stock (cost)</span><span className="dv">{R(agg.openingStockCost)}</span></div>
+          <div className="dr"><span className="dl">+ Purchases / stock bought</span><span className="dv a">{R(agg.stockPurchaseCost)}</span></div>
+          <div className="dr"><span className="dl">− Closing stock (cost)</span><span className="dv">{R(agg.closingStockCost)}</span></div>
+          <div className="dr tot"><span className="dl">= COGS</span><span className="dv a">{R(agg.totCogs)}</span></div>
+          <div className="dr"><span className="dl">Sales</span><span className="dv g">{R(agg.totSales)}</span></div>
+          <div className="dr tot"><span className="dl">= Gross Profit</span><span className="dv b">{R(agg.gross)}</span></div>
+          <div className="info-box" style={{ marginTop: 8 }}>
+            {agg.stockChange >= 0
+              ? `Closing stock is ${R(agg.stockChange)} more than opening — stock (assets) grew, which lifts profit via lower COGS.`
+              : `Closing stock is ${R(Math.abs(agg.stockChange))} less than opening — stock drawn down, raising COGS.`}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="ch"><h3>Profit & loss</h3><button className="btn bo btn-xs no-print" onClick={() => onNav('reports')}>Full reports →</button></div>
+          <div className="dr"><span className="dl">Total Sales</span><span className="dv g">{R(agg.totSales)}</span></div>
+          <div className="dr"><span className="dl">Less: COGS</span><span className="dv a">{R(agg.totCogs)}</span></div>
+          <div className="dr tot"><span className="dl">Gross Profit</span><span className="dv b">{R(agg.gross)}</span></div>
+          {agg.leaseIncome > 0 && <div className="dr"><span className="dl">Add: Lease income</span><span className="dv g">{R(agg.leaseIncome)}</span></div>}
+          <div className="dr"><span className="dl">Less: Expenses</span><span className="dv r">{R(agg.totExp)}</span></div>
+          {agg.reduceSuspense && <div className="dr"><span className="dl">Less: Suspense (month-end)</span><span className="dv r">{R(agg.totSuspense)}</span></div>}
+          <div className="dr tot"><span className="dl">Net Profit</span><span className={'dv ' + (agg.net >= 0 ? 'g' : 'r')}>{R(agg.net)}</span></div>
+        </div>
       </div>
 
       <Recommendations open={showRecs} onClose={() => setShowRecs(false)} recs={recs} rangeLabel={filter.label} />

@@ -176,7 +176,9 @@ export async function parseDailyUpload(stockFile, salesFile) {
     purchase_cost: s.purchaseCost ?? 0,
     items: (stock?.items || []).map((i) => ({
       name: i.name, cat: i.cat, qty: i.saleQty, amount: i.saleAmount,
-      closing: i.closingValue, margin: i.marginPct, sRate: i.sRate, pRate: i.pRate,
+      closing: i.closingValue, closing_cost: i.closingCost,
+      closing_qty: i.sRate ? Math.round(i.closingValue / i.sRate) : 0,
+      margin: i.marginPct, sRate: i.sRate, pRate: i.pRate,
     })),
     sales_items: sales?.items || [],
     item_coverage: totalSales ? Math.round(((stock?.items || []).reduce((a, i) => a + i.saleAmount, 0) / totalSales) * 100) : 0,

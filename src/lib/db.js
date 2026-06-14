@@ -15,7 +15,7 @@ async function loadCollection(uid, name, orderField) {
 }
 
 export async function loadAll(uid) {
-  const [sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals] = await Promise.all([
+  const [sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals, additions, leasecollections] = await Promise.all([
     loadCollection(uid, 'sales', 'entry_date'),
     loadCollection(uid, 'expenses', 'expense_date'),
     loadCollection(uid, 'purchases', 'purchase_date'),
@@ -24,9 +24,19 @@ export async function loadAll(uid) {
     loadCollection(uid, 'suspense', 'suspense_date'),
     loadCollection(uid, 'deposits', 'deposit_date'),
     loadCollection(uid, 'withdrawals', 'withdraw_date'),
+    loadCollection(uid, 'additions', 'add_date'),
+    loadCollection(uid, 'leasecollections', 'collect_date'),
   ])
-  return { sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals }
+  return { sales, expenses, purchases, stock, reports, suspense, deposits, withdrawals, additions, leasecollections }
 }
+
+// ── Cash / capital additions (dated top-up of an account) ─
+export async function addAddition(uid, row) { await addDoc(col(uid, 'additions'), row) }
+export async function deleteAddition(uid, id) { await deleteDoc(docRef(uid, 'additions', id)) }
+
+// ── Lease collections (realising accrued lease into an account) ─
+export async function addLeaseCollection(uid, row) { await addDoc(col(uid, 'leasecollections'), row) }
+export async function deleteLeaseCollection(uid, id) { await deleteDoc(docRef(uid, 'leasecollections', id)) }
 
 // ── Bank deposits (move cash → a bank account) ───────────
 export async function addDeposit(uid, row) { await addDoc(col(uid, 'deposits'), row) }
@@ -88,6 +98,7 @@ export async function saveCategories(uid, categories) {
 export const DEFAULT_CONFIG = {
   accounts: DEFAULT_ACCOUNTS,
   openings: {},
+  opening_dates: {},
   lease_mode: false,
   leased: {},
   lease_amounts: {},

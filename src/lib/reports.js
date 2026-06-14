@@ -49,13 +49,19 @@ export function aggregate(reports, expenses, purchases = [], config = {}, range 
     gross: (r.total_sales || 0) - (r.cogs || 0),
   }))
 
+  const openingStockCost = rs[0]?.opening_stock_cost || 0
+  const closingStockCost = latest?.closing_stock_cost || 0
+  const stockPurchaseCost = sum(rs, 'purchase_cost')
+  const stockChange = closingStockCost - openingStockCost
+
   return {
     days: rs.length, workingDays, totSales, totCogs, gross, totExp, totPurch, net, totSuspense, cashInHand,
     reduceSuspense, suspenseAdj, totIncome, qtyPurchased, qtySold, qtyRemaining,
     gpm, npm, expRatio, latest, trend, leaseIncome, leaseDay,
     leaseModules: leasedModuleLabels(config),
+    openingStockCost, stockPurchaseCost, stockChange,
     closingStockValue: latest?.closing_stock_sale_value || 0,
-    closingStockCost: latest?.closing_stock_cost || 0,
+    closingStockCost,
   }
 }
 
@@ -86,7 +92,7 @@ export function salesByAccount(report, cashName) {
 //   Cash also pays out deposits (cash → bank)
 //   each account pays out its purchases/expenses/withdrawals
 export function computeBalances(config, data, range = null) {
-  const { reports = [], purchases = [], expenses = [], deposits = [], withdrawals = [] } = data
+  const { reports = [], purchases = [], expenses = [], deposits = [], withdrawals = [], additions = [], leasecollections = [] } = data
   const accounts = config?.accounts?.length ? config.accounts : ['Cash']
   const cashName = accounts[0]
   const to = range?.to || '9999-12-31'
@@ -97,11 +103,15 @@ export function computeBalances(config, data, range = null) {
   return accounts.map((acct) => {
     const isCash = acct === cashName
     const opening = Number(config?.openings?.[acct]) || 0
+    const openDate = config?.opening_dates?.[acct] || null
     let inToDate = 0, outToDate = 0, periodIn = 0, periodOut = 0
     const addIn = (d, amt) => { if (!amt) return; if (upTo(d)) inToDate += amt; if (inWin(d)) periodIn += amt }
     const addOut = (d, amt) => { if (!amt) return; if (upTo(d)) outToDate += amt; if (inWin(d)) periodOut += amt }
 
+    if (openDate) addIn(openDate, opening) // opening effective from its date
     reports.forEach((r) => addIn(r.entry_date, salesByAccount(r, cashName)[acct] || 0))
+    additions.forEach((x) => { if ((x.to_account || cashName) === acct) addIn(x.add_date, Number(x.amount) || 0) })
+    leasecollections.forEach((x) => { if ((x.to_account || cashName) === acct) addIn(x.collect_date, Number(x.amount) || 0) })
     deposits.forEach((dp) => {
       const a = Number(dp.amount) || 0
       if (dp.to_account === acct) addIn(dp.deposit_date, a)
@@ -111,7 +121,8 @@ export function computeBalances(config, data, range = null) {
     expenses.forEach((e) => { if ((e.paid_from || cashName) === acct) addOut(e.expense_date, Number(e.amount) || 0) })
     withdrawals.forEach((w) => { if ((w.from_account || cashName) === acct) addOut(w.withdraw_date, Number(w.amount) || 0) })
 
-    return { account: acct, isCash, opening, periodIn, periodOut, balance: opening + inToDate - outToDate }
+    const seed = openDate ? 0 : opening
+    return { account: acct, isCash, opening, periodIn, periodOut, balance: seed + inToDate - outToDate }
   })
 }
 
@@ -120,7 +131,7 @@ export function computeBalances(config, data, range = null) {
 // cash-flow breakdown plus every account's closing balance that day, so we can
 // show bank availability alongside cash.
 export function buildLedger(config, data) {
-  const { reports = [], purchases = [], expenses = [], deposits = [], withdrawals = [] } = data
+  const { reports = [], purchases = [], expenses = [], deposits = [], withdrawals = [], additions = [], leasecollections = [] } = data
   const accounts = config?.accounts?.length ? config.accounts : ['Cash']
   const cashName = accounts[0]
   const sumOn = (arr, dKey, d, aKey) => arr.filter((x) => x[dKey] === d && (x[aKey] || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
@@ -131,12 +142,17 @@ export function buildLedger(config, data) {
   purchases.forEach((p) => dates.add(p.purchase_date))
   deposits.forEach((dp) => dates.add(dp.deposit_date))
   withdrawals.forEach((w) => dates.add(w.withdraw_date))
+  additions.forEach((x) => dates.add(x.add_date))
+  leasecollections.forEach((x) => dates.add(x.collect_date))
+  accounts.forEach((a) => { if (config?.opening_dates?.[a] && (Number(config?.openings?.[a]) || 0)) dates.add(config.opening_dates[a]) })
   const sorted = [...dates].filter(Boolean).sort()
 
   const bal = {}
-  accounts.forEach((a) => { bal[a] = Number(config?.openings?.[a]) || 0 })
+  accounts.forEach((a) => { bal[a] = config?.opening_dates?.[a] ? 0 : (Number(config?.openings?.[a]) || 0) })
   const reportByDate = {}
   reports.forEach((r) => { reportByDate[r.entry_date] = r })
+
+  const openingOn = (a, d) => (config?.opening_dates?.[a] === d ? (Number(config?.openings?.[a]) || 0) : 0)
 
   const rows = sorted.map((d) => {
     const r = reportByDate[d]
@@ -147,10 +163,15 @@ export function buildLedger(config, data) {
     const pur = sumOn(purchases, 'purchase_date', d, 'paid_from')
     const dep = deposits.filter((x) => x.deposit_date === d).reduce((a, x) => a + (Number(x.amount) || 0), 0)
     const wd = sumOn(withdrawals, 'withdraw_date', d, 'from_account')
+    const addedCash = openingOn(cashName, d)
+      + additions.filter((x) => x.add_date === d && (x.to_account || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+      + leasecollections.filter((x) => x.collect_date === d && (x.to_account || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
 
     accounts.forEach((a) => {
       const isCash = a === cashName
-      let delta = sba[a] || 0
+      let delta = (sba[a] || 0) + openingOn(a, d)
+      additions.filter((x) => x.add_date === d && (x.to_account || cashName) === a).forEach((x) => { delta += Number(x.amount) || 0 })
+      leasecollections.filter((x) => x.collect_date === d && (x.to_account || cashName) === a).forEach((x) => { delta += Number(x.amount) || 0 })
       deposits.filter((x) => x.deposit_date === d).forEach((x) => { if (x.to_account === a) delta += Number(x.amount) || 0; if (isCash) delta -= Number(x.amount) || 0 })
       purchases.filter((x) => x.purchase_date === d && (x.paid_from || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
       expenses.filter((x) => x.expense_date === d && (x.paid_from || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
@@ -158,7 +179,7 @@ export function buildLedger(config, data) {
       bal[a] += delta
     })
 
-    return { date: d, hasReport: !!r, opening, sales, exp, pur, dep, wd, out: exp + pur + dep + wd, closing: bal[cashName], balances: { ...bal } }
+    return { date: d, hasReport: !!r, opening, sales, added: addedCash, exp, pur, dep, wd, out: exp + pur + dep + wd, closing: bal[cashName], balances: { ...bal } }
   })
 
   return { accounts, cashName, rows, balances: { ...bal } }

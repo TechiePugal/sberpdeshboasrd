@@ -9,6 +9,8 @@ export const ICONS = {
   daybook: I(<><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></>),
   deposits: I(<><rect x="2" y="6" width="20" height="13" rx="2" /><path d="M2 10h20" /><circle cx="12" cy="14.5" r="1.5" /></>),
   profitsplit: I(<><line x1="12" y1="2" x2="12" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></>),
+  lease: I(<><path d="M21 10V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0" /><circle cx="16.5" cy="15.5" r="2.5" /><path d="m21 20-1.5-1.5" /></>),
+  stock: I(<><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /><polyline points="3.3 7 12 12 20.7 7" /><line x1="12" y1="22" x2="12" y2="12" /></>),
   purchases: I(<><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" /></>),
   expenses: I(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   suspense: I(<><path d="M5 22h14" /><path d="M5 2h14" /><path d="M17 22v-4.17a2 2 0 00-.59-1.42L12 12l-4.41 4.41A2 2 0 007 17.83V22" /><path d="M7 2v4.17a2 2 0 00.59 1.42L12 12l4.41-4.41A2 2 0 0017 6.17V2" /></>),
@@ -27,12 +29,14 @@ export const PAGES = [
   { id: 'expenses', label: 'Expenses', title: 'Expenses', section: 'Money' },
   { id: 'deposits', label: 'Bank Deposit', title: 'Bank Deposit', section: 'Money' },
   { id: 'profitsplit', label: 'Profit Split', title: 'Profit Split', section: 'Money' },
+  { id: 'lease', label: 'Lease', title: 'Lease Management', section: 'Money' },
   { id: 'suspense', label: 'Suspense', title: 'Suspense', section: 'Money' },
   { id: 'profit', label: 'Sales & Profit', title: 'Sales & Profit', section: 'Analysis' },
+  { id: 'stock', label: 'Current Stock', title: 'Current Stock', section: 'Analysis' },
   { id: 'reports', label: 'Reports', title: 'Reports', section: 'Analysis' },
   { id: 'records', label: 'Records', title: 'Saved Reports', section: 'Analysis' },
   { id: 'settings', label: 'Settings', title: 'Settings', section: 'Setup' },
 ]
 
 export const MOBILE_PRIMARY = ['dash', 'daybook', 'reports', 'records']
-export const MOBILE_MORE = ['upload', 'purchases', 'expenses', 'deposits', 'profitsplit', 'suspense', 'profit', 'settings']
+export const MOBILE_MORE = ['upload', 'purchases', 'expenses', 'deposits', 'profitsplit', 'lease', 'suspense', 'profit', 'stock', 'settings']

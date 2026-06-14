@@ -14,9 +14,9 @@ export default function Settings() {
   const setAccountName = (i, name) => setCfg((c) => {
     const accounts = [...c.accounts]; const old = accounts[i]; accounts[i] = name
     const openings = { ...c.openings }; if (old in openings) { openings[name] = openings[old]; delete openings[old] }
-    return { ...c, accounts, openings }
+    const opening_dates = { ...(c.opening_dates || {}) }; if (old in opening_dates) { opening_dates[name] = opening_dates[old]; delete opening_dates[old] }
+    return { ...c, accounts, openings, opening_dates }
   })
-  const setOpening = (acct, v) => setCfg((c) => ({ ...c, openings: { ...c.openings, [acct]: parseFloat(v) || 0 } }))
   const addAccount = () => setCfg((c) => ({ ...c, accounts: [...c.accounts, `Account ${c.accounts.length + 1}`] }))
   const removeAccount = (i) => setCfg((c) => {
     const accounts = c.accounts.filter((_, idx) => idx !== i)
@@ -40,12 +40,18 @@ export default function Settings() {
   return (
     <>
       <div className="card">
-        <div className="ch"><h3>💳 Payment accounts</h3><small style={{ color: 'var(--t2)' }}>cash & bank/UPI you collect into</small></div>
-        <div className="info-box">These are the buckets used at day-end and for "paid from" on purchases/expenses. Set each one's <strong>opening balance</strong> so running balances are correct.</div>
+        <div className="ch"><h3>💳 Payment accounts</h3><small style={{ color: 'var(--t2)' }}>cash & bank/UPI accounts</small></div>
+        <div className="info-box">
+          These are the buckets used for the sales split and "paid from" on purchases/expenses.
+          Add all the accounts you use (cash counter, UPI, bank, etc.) and give them clear names.
+          <br />
+          <span style={{ fontSize: 12, color: 'var(--t2)', marginTop: 4, display: 'inline-block' }}>
+            💡 To initialise your starting cash or bank balance, go to <strong>Day Book</strong>, click any row in the daily cash-flow table, and click <strong>💰 Set / Edit Opening Balance</strong>.
+          </span>
+        </div>
         {cfg.accounts.map((acct, i) => (
-          <div key={i} className="fg3" style={{ alignItems: 'end', marginBottom: 6 }}>
+          <div key={i} className="acct-row" style={{ gridTemplateColumns: '1fr auto' }}>
             <div className="ff"><label>Account name</label><input value={acct} onChange={(e) => setAccountName(i, e.target.value)} /></div>
-            <div className="ff"><label>Opening balance (₹)</label><input type="number" value={cfg.openings?.[acct] ?? ''} onChange={(e) => setOpening(acct, e.target.value)} placeholder="0" /></div>
             <div className="ff"><label>&nbsp;</label>{cfg.accounts.length > 1 && <button className="btn bo" onClick={() => removeAccount(i)}>Remove</button>}</div>
           </div>
         ))}
