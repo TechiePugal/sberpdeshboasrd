@@ -7,14 +7,14 @@ import { computeBalances } from '../lib/reports'
 import FilterBar from '../components/FilterBar'
 
 export default function ProfitSplit() {
-  const { uid, withdrawals, reports, purchases, expenses, deposits, config, filter, refresh } = useData()
+  const { uid, withdrawals, reports, purchases, expenses, deposits, additions, leasecollections, config, filter, refresh } = useData()
   const { toast, confirm } = useUI()
   const accounts = config.accounts?.length ? config.accounts : ['Cash']
 
   const [form, setForm] = useState({ withdraw_date: todayStr(), amount: '', from_account: accounts[0], note: '' })
   const [busy, setBusy] = useState(false)
 
-  const balances = useMemo(() => computeBalances(config, { reports, purchases, expenses, deposits, withdrawals }, filter), [config, reports, purchases, expenses, deposits, withdrawals, filter])
+  const balances = useMemo(() => computeBalances(config, { reports, purchases, expenses, deposits, withdrawals, additions, leasecollections }, filter), [config, reports, purchases, expenses, deposits, withdrawals, additions, leasecollections, filter])
   const balOf = (a) => balances.find((b) => b.account === a)?.balance || 0
   const fw = filterRange(withdrawals, 'withdraw_date', filter).slice().reverse()
   const total = fw.reduce((a, w) => a + (Number(w.amount) || 0), 0)

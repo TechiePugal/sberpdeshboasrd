@@ -114,8 +114,9 @@ export function computeBalances(config, data, range = null) {
     leasecollections.forEach((x) => { if ((x.to_account || cashName) === acct) addIn(x.collect_date, Number(x.amount) || 0) })
     deposits.forEach((dp) => {
       const a = Number(dp.amount) || 0
+      const from = dp.from_account || cashName // older records moved from cash
       if (dp.to_account === acct) addIn(dp.deposit_date, a)
-      if (isCash) addOut(dp.deposit_date, a) // deposits always leave cash
+      if (from === acct) addOut(dp.deposit_date, a)
     })
     purchases.forEach((p) => { if ((p.paid_from || cashName) === acct) addOut(p.purchase_date, Number(p.amount) || 0) })
     expenses.forEach((e) => { if ((e.paid_from || cashName) === acct) addOut(e.expense_date, Number(e.amount) || 0) })
@@ -161,18 +162,18 @@ export function buildLedger(config, data) {
     const sales = sba[cashName] || 0
     const exp = sumOn(expenses, 'expense_date', d, 'paid_from')
     const pur = sumOn(purchases, 'purchase_date', d, 'paid_from')
-    const dep = deposits.filter((x) => x.deposit_date === d).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+    const dep = deposits.filter((x) => x.deposit_date === d && (x.from_account || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
     const wd = sumOn(withdrawals, 'withdraw_date', d, 'from_account')
     const addedCash = openingOn(cashName, d)
       + additions.filter((x) => x.add_date === d && (x.to_account || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
       + leasecollections.filter((x) => x.collect_date === d && (x.to_account || cashName) === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
+      + deposits.filter((x) => x.deposit_date === d && x.to_account === cashName).reduce((a, x) => a + (Number(x.amount) || 0), 0)
 
     accounts.forEach((a) => {
-      const isCash = a === cashName
       let delta = (sba[a] || 0) + openingOn(a, d)
       additions.filter((x) => x.add_date === d && (x.to_account || cashName) === a).forEach((x) => { delta += Number(x.amount) || 0 })
       leasecollections.filter((x) => x.collect_date === d && (x.to_account || cashName) === a).forEach((x) => { delta += Number(x.amount) || 0 })
-      deposits.filter((x) => x.deposit_date === d).forEach((x) => { if (x.to_account === a) delta += Number(x.amount) || 0; if (isCash) delta -= Number(x.amount) || 0 })
+      deposits.filter((x) => x.deposit_date === d).forEach((x) => { const amt = Number(x.amount) || 0; const from = x.from_account || cashName; if (x.to_account === a) delta += amt; if (from === a) delta -= amt })
       purchases.filter((x) => x.purchase_date === d && (x.paid_from || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
       expenses.filter((x) => x.expense_date === d && (x.paid_from || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })
       withdrawals.filter((x) => x.withdraw_date === d && (x.from_account || cashName) === a).forEach((x) => { delta -= Number(x.amount) || 0 })

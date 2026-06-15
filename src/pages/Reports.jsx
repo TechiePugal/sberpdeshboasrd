@@ -12,7 +12,7 @@ const TYPES = [
 ]
 
 export default function Reports() {
-  const { reports, expenses, purchases, suspense, deposits, withdrawals, config, filter } = useData()
+  const { reports, expenses, purchases, suspense, deposits, withdrawals, additions, leasecollections, config, filter } = useData()
   const [type, setType] = useState('monthly')
 
   const fr = filterRange(reports, 'entry_date', filter)
@@ -23,7 +23,7 @@ export default function Reports() {
   const fw = filterRange(withdrawals, 'withdraw_date', filter)
   const agg = useMemo(() => aggregate(fr, fe, fp, config, filter, fsus), [fr, fe, fp, config, filter, fsus])
   const items = useMemo(() => mergeItems(fr).map((i) => ({ ...i, profit: Math.round((i.sRate - i.pRate) * i.qty) })), [fr])
-  const balances = useMemo(() => computeBalances(config, { reports, purchases, expenses, deposits, withdrawals }, filter), [config, reports, purchases, expenses, deposits, withdrawals, filter])
+  const balances = useMemo(() => computeBalances(config, { reports, purchases, expenses, deposits, withdrawals, additions, leasecollections }, filter), [config, reports, purchases, expenses, deposits, withdrawals, additions, leasecollections, filter])
   const currentBalance = balances.reduce((a, b) => a + b.balance, 0)
   const typeLabel = TYPES.find((t) => t[0] === type)[1]
 
@@ -193,8 +193,8 @@ function FullReport({ d }) {
       <h3 style={{ margin: '6px 0' }}>7. Balances, Deposits &amp; Withdrawals</h3>
       <BalancesCard balances={d.balances} currentBalance={d.currentBalance} payMix={d.payMix} />
       {d.fd.length > 0 && (
-        <section className="card"><div className="ch"><h3>Bank deposits</h3></div>
-          {[...d.fd].reverse().map((x) => <div className="dr" key={x.id}><span className="dl">{x.deposit_date} → {x.to_account}</span><span className="dv a">{R(x.amount)}</span></div>)}
+        <section className="card"><div className="ch"><h3>Transfers</h3></div>
+          {[...d.fd].reverse().map((x) => <div className="dr" key={x.id}><span className="dl">{x.deposit_date} · {x.from_account || 'Cash'} → {x.to_account}</span><span className="dv a">{R(x.amount)}</span></div>)}
         </section>
       )}
       {d.fw.length > 0 && (

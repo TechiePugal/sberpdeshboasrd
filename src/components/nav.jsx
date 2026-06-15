@@ -27,7 +27,7 @@ export const PAGES = [
   { id: 'daybook', label: 'Day Book', title: 'Day Book', section: 'Main' },
   { id: 'purchases', label: 'Purchases', title: 'Purchases', section: 'Money' },
   { id: 'expenses', label: 'Expenses', title: 'Expenses', section: 'Money' },
-  { id: 'deposits', label: 'Bank Deposit', title: 'Bank Deposit', section: 'Money' },
+  { id: 'deposits', label: 'Transfer', title: 'Transfer / Deposit', section: 'Money' },
   { id: 'profitsplit', label: 'Profit Split', title: 'Profit Split', section: 'Money' },
   { id: 'lease', label: 'Lease', title: 'Lease Management', section: 'Money' },
   { id: 'suspense', label: 'Suspense', title: 'Suspense', section: 'Money' },
